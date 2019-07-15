@@ -8,7 +8,7 @@ import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientB
 import com.amazonaws.services.identitymanagement.model.GetUserRequest;
 import com.amazonaws.services.identitymanagement.model.GetUserResult;
 
-public class IamTest {
+public class STSAutomaticRefreshTest {
 
 	public static void main(String[] args) throws InterruptedException {
 		
