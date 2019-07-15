@@ -7,7 +7,7 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
 
-public class CredsTest {
+public class CredentialsProviderTest {
 
 	public static void main(String[] args) {
 		
