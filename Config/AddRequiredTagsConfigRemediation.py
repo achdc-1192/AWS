@@ -58,14 +58,14 @@ ELB_CLIENT_2 = boto3.client('elbv2')
 RDS_CLIENT = boto3.client('rds')
 REDSHIFT_CLIENT = boto3.client('redshift')
 S3_CLIENT = boto3.client('s3')
-
+CONFIG_CLIENT = boto3.client('config')
 
 
 def lambda_handler(event, context):
     #print(event["detail"]["requestParameters"]["evaluations"])
     evaluations = event["detail"]["requestParameters"]["evaluations"]
     accountId = event['account']
-    region_resource = event['detail']['awsRegion']
+    region = event["detail"]["awsRegion"]
     for evaluation in evaluations:
         #print(evaluation)
         if evaluation["complianceType"] == "NON_COMPLIANT":
@@ -77,13 +77,13 @@ def lambda_handler(event, context):
                 acm_add_tags(evaluation["complianceResourceType"], evaluation["complianceResourceId"])
 
             elif 'DynamoDB' in evaluation["complianceResourceType"]:
-                dynamodb_add_tags(accountId, evaluation["complianceResourceType"], evaluation["complianceResourceId"])
+                dynamodb_add_tags(accountId, region, evaluation["complianceResourceType"], evaluation["complianceResourceId"])
 
             elif 'Redshift' in evaluation["complianceResourceType"]:
-                redshift_add_tags(accountId, evaluation["complianceResourceType"], evaluation["complianceResourceId"])
+                redshift_add_tags(accountId, region, evaluation["complianceResourceType"], evaluation["complianceResourceId"])
 
             elif 'RDS' in evaluation["complianceResourceType"]:
-                rds_add_tags(accountId, evaluation["complianceResourceType"], evaluation["complianceResourceId"])
+                rds_add_tags(accountId, region, evaluation["complianceResourceType"], evaluation["complianceResourceId"])
 
             elif 'S3' in evaluation["complianceResourceType"]:
                 s3_add_tags(evaluation["complianceResourceType"], evaluation["complianceResourceId"])
@@ -117,8 +117,8 @@ def autoscaling_add_tags(complianceResourceType,complianceResourceId):
         return e
 
 
-def dynamodb_add_tags(accountId, complianceResourceType,complianceResourceId):
-    arn="arn:aws:dynamodb:"+region_resource+":"+accountId+":table/"+complianceResourceId
+def dynamodb_add_tags(accountId, region, complianceResourceType,complianceResourceId):
+    arn="arn:aws:dynamodb:"+region+":"+accountId+":table/"+complianceResourceId
     try:
         response = DDB_CLIENT.tag_resource(ResourceArn=arn,Tags=[{'Key': 'auto-stop', 'Value' : 'no'},{'Key': 'auto-delete', 'Value' : 'never'}])
         print("Adding Tags on {} for the resource {}".format(complianceResourceType, complianceResourceId))
@@ -156,16 +156,20 @@ def elb_2_add_tags(complianceResourceType,complianceResourceId):
         print("DID_NOT ADD TAGS on {} for the resource {}".format(complianceResourceType, complianceResourceId))
         return e
 
-def rds_add_tags(accountId, complianceResourceType,complianceResourceId):
+def rds_add_tags(accountId, region, complianceResourceType,complianceResourceId):
     arn = ""
     if complianceResourceType == "AWS::RDS::DBInstance":
-        arn="arn:aws:rds:"+region_resource+":"+accountId+":db:"+complianceResourceId
+        rds_db_details = CONFIG_CLIENT.list_discovered_resources(resourceType="AWS::RDS::DBInstance",resourceIds=[complianceResourceId])
+        rds_db_name = rds_db_details["resourceIdentifiers"][0]["resourceName"]
+        arn="arn:aws:rds:"+region+":"+accountId+":db:"+rds_db_name
     elif complianceResourceType == "AWS::RDS::DBSecurityGroup":
-        arn="arn:aws:rds:"+region_resource+":"+accountId+":secgrp:"+complianceResourceId
+        arn="arn:aws:rds:"+region+":"+accountId+":secgrp:"+complianceResourceId
     elif complianceResourceType == "AWS::RDS::DBSnapshot":
-        arn="arn:aws:rds:"+region_resource+":"+accountId+":snapshot:"+complianceResourceId
+        arn="arn:aws:rds:"+region+":"+accountId+":snapshot:"+complianceResourceId
     elif complianceResourceType == "AWS::RDS::DBSubnetGroup":
-        arn="arn:aws:rds:"+region_resource+":"+accountId+":subgrp:"+complianceResourceId
+        arn="arn:aws:rds:"+region+":"+accountId+":subgrp:"+complianceResourceId
+    else:
+        arn="arn:aws:rds:"+region+":"+accountId+":es:"+complianceResourceId
     print(arn)
     try:
         response = RDS_CLIENT.add_tags_to_resource(ResourceName=arn,Tags=[{'Key': 'auto-stop', 'Value' : 'no'},{'Key': 'auto-delete', 'Value' : 'never'}])
@@ -175,18 +179,21 @@ def rds_add_tags(accountId, complianceResourceType,complianceResourceId):
         print("DID_NOT ADD TAGS on {} for the resource {}".format(complianceResourceType, complianceResourceId))
         return e
 
-def redshift_add_tags(accountId, complianceResourceType,complianceResourceId):
+def redshift_add_tags(accountId, region, complianceResourceType,complianceResourceId):
     arn = ""
     if complianceResourceType == "AWS::Redshift::Cluster":
-        arn="arn:aws:redshift:"+region_resource+":"+accountId+":cluster:"+complianceResourceId
+        arn="arn:aws:redshift:"+region+":"+accountId+":cluster:"+complianceResourceId
     elif complianceResourceType == "AWS::Redshift::ClusterParameterGroup":
-        arn="arn:aws:redshift:"+region_resource+":"+accountId+":parametergroup:"+complianceResourceId
+        arn="arn:aws:redshift:"+region+":"+accountId+":parametergroup:"+complianceResourceId
     elif complianceResourceType == "AWS::Redshift::ClusterSecurityGroup":
-        arn="arn:aws:redshift:"+region_resource+":"+accountId+":securitygroup:"+complianceResourceId
+        arn="arn:aws:redshift:"+region+":"+accountId+":securitygroup:"+complianceResourceId
     elif complianceResourceType == "AWS::Redshift::ClusterSnapshot":
-        arn="arn:aws:redshift:"+region_resource+":"+accountId+":snapshot:"+complianceResourceId
+        arn="arn:aws:redshift:"+region+":"+accountId+":snapshot:"+complianceResourceId
     elif complianceResourceType == "AWS::Redshift::ClusterSubnetGroup":
-        arn="arn:aws:redshift:us-east-1:"+accountId+":subnetgroup:"+complianceResourceId
+        arn="arn:aws:redshift:"+region+":"+accountId+":subnetgroup:"+complianceResourceId
+    else:
+        arn="arn:aws:redshift:"+region+":"+accountId+":eventsubscription:"+complianceResourceId
+        
 
     try:
         response = REDSHIFT_CLIENT.create_tags(ResourceName=arn,Tags=[{'Key': 'auto-stop', 'Value' : 'no'},{'Key': 'auto-delete', 'Value' : 'never'}])
