@@ -109,7 +109,7 @@ def acm_add_tags(complianceResourceType, complianceResourceId):
 
 def autoscaling_add_tags(complianceResourceType,complianceResourceId):
     try:
-        response = ACM_CLIENT.create_or_update_tags(Tags=[{'Key': 'auto-stop', 'Value' : 'no', 'ResourceId': complianceResourceId},{'Key': 'auto-delete', 'Value' : 'never', 'ResourceId': complianceResourceId}])
+        response = ASG_CLIENT.create_or_update_tags(Tags=[{'Key': 'auto-stop', 'Value' : 'no', 'ResourceId': complianceResourceId},{'Key': 'auto-delete', 'Value' : 'never', 'ResourceId': complianceResourceId}])
         print("Adding Tags on {} for the resource {}".format(complianceResourceType, complianceResourceId))
         return response
     except Exception as e:
