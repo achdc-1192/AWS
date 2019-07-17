@@ -1,6 +1,9 @@
 '''
 Please run this code in Python3 environment
 
+***** NOTE - THIS CODE DOESN'T UPDATE CLOUDFORMATION and CODEBUILD TAGS *****
+
+
 This rule will use AWS Config "required-tags" rule. The "required-tags" rule will check
 if the resources have the following tags
 auto-stop : no
