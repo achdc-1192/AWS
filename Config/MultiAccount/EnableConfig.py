@@ -188,8 +188,9 @@ if __name__ == '__main__':
 
                         if len(recorder_list["ConfigurationRecorders"]) == 0:
                             print("No recorders exist in this account {} and in this region {}".format(account, aws_region))
-                        else:
                             print(enable_config(config_client,account,aws_region))
+                        else:
+                            print("Configuration Recorder exists in {} in region {}".format(account, aws_region))
 
                     except Exception as e:
                         print("Account {} has {} region disabled ❌".format(
@@ -205,16 +206,12 @@ if __name__ == '__main__':
 
                         # Enable GlobalResourceTypes only if the region is us-east-1.
 
-                        if aws_region == "us-east-1":
+                        print(enable_config(config_client,account,aws_region))
 
-                            print(enable_config(config_client,account,aws_region))
-
-                        else:
-
-                            print(enable_config(config_client,account,aws_region))
                     else:
-                        print("Config is already enabled in {} in region {}".
-                              format(account, aws_region))
+
+                        print("Configuration Recorder exists in {} in region {}".format(account, aws_region))
+                        
 
         except Exception as e:
             print("{} in {} region {} ❌".format(e, account, aws_region))
