@@ -53,6 +53,7 @@ To enable config:
 
 To disable config:
 - This script does not disable config in "us-east-1" region just for the fact that I use that region regularly
+
 ./DisableConfig.py --assume_role ConfigAdmin test.csv
 
 
