@@ -42,8 +42,8 @@ EnableConfig.py
 
 ------------------------------------------------------------------
 The file test.csv must contain your account numbers, one per line:
-123456789012
-098765432109
+- 123456789012
+- 098765432109
 
 To enable config:
 Recording GlobalResources is enabled only in "us-east-1". 
