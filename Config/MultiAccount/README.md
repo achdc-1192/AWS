@@ -1,4 +1,4 @@
-The scripts provided in this folder will enable Config in all accounts and in all regions.
+The scripts provided in this folder will enable and disable Config in all accounts and in all regions.
 
 EnableConfig.py
 
