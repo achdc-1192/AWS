@@ -46,13 +46,13 @@ The file test.csv must contain your account numbers, one per line:
 - 098765432109
 
 To enable config:
-Recording GlobalResources is enabled only in "us-east-1". 
+- Recording GlobalResources is enabled only in "us-east-1". 
 
 ./EnableConfig.py  --assume_role ConfigAdmin --bucket_name example-bucket test.csv
 
 
 To disable config:
-This script does not disable config in "us-east-1" region just for the fact that I use that region regularly
+- This script does not disable config in "us-east-1" region just for the fact that I use that region regularly
 ./DisableConfig.py --assume_role ConfigAdmin test.csv
 
 
