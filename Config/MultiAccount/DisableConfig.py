@@ -117,10 +117,10 @@ if __name__ == '__main__':
         config_regions = [
             str(item) for item in args.enabled_regions.split(',')
         ]
-        print("Enabling Config in these regions: {}".format(config_regions))
+        print("Disabling Config in these regions: {}".format(config_regions))
     else:
         config_regions = session.get_available_regions('config')
-        print("Enabling Config in all available regions {}".format(
+        print("Disabling Config in all available regions {}".format(
             config_regions))
 
     failed_accounts = []
