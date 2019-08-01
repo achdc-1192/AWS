@@ -5,10 +5,7 @@ import argparse
 HSM_CLIENT = boto3.client('cloudhsmv2')
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--backup_id',
-						type=str,
-						required=True,
-						help="back up id that you don't want to delete")
+parser.add_argument('--backup_id',type=str,required=True,help="back up id that you don't want to delete")
 args = parser.parse_args()
 clusters = HSM_CLIENT.describe_clusters()
 
