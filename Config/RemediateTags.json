@@ -1,0 +1,197 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Resources needed to deploy to automate tags remediation using config + cloudwatch rule + lambda function.\n",
+    "Parameters": {
+        "BucketName": {
+            "Description": "Enter the bucket name where the lambda_function is stored",
+            "Type": "String"
+        },
+        "ObjectName": {
+            "Description": "Enter object name or key of the lambda_function stored in the bucket",
+            "Type": "String"
+        }
+    },
+    "Resources": {
+        "ConfigRuleForTags": {
+            "Type": "AWS::Config::ConfigRule",
+            "Properties": {
+                "InputParameters": {
+                    "tag1Key": "auto-delete",
+                    "tag1Value": "never",
+                    "tag2Key": "auto-stop",
+                    "tag2Value": "no"
+                },
+                "Source": {
+                    "Owner": "AWS",
+                    "SourceIdentifier": "REQUIRED_TAGS"
+                },
+                "Scope": {
+                    "ComplianceResourceTypes": [
+                        "AWS::ACM::Certificate",
+                        "AWS::AutoScaling::AutoScalingGroup",
+                        "AWS::DynamoDB::Table",
+                        "AWS::EC2::CustomerGateway",
+                        "AWS::EC2::Instance",
+                        "AWS::EC2::InternetGateway",
+                        "AWS::EC2::NetworkAcl",
+                        "AWS::EC2::NetworkInterface",
+                        "AWS::EC2::RouteTable",
+                        "AWS::EC2::SecurityGroup",
+                        "AWS::EC2::Subnet",
+                        "AWS::EC2::Volume",
+                        "AWS::EC2::VPC",
+                        "AWS::EC2::VPNConnection",
+                        "AWS::EC2::VPNGateway",
+                        "AWS::ElasticLoadBalancing::LoadBalancer",
+                        "AWS::ElasticLoadBalancingV2::LoadBalancer",
+                        "AWS::RDS::DBInstance",
+                        "AWS::RDS::DBSecurityGroup",
+                        "AWS::RDS::DBSnapshot",
+                        "AWS::RDS::DBSubnetGroup",
+                        "AWS::RDS::EventSubscription",
+                        "AWS::Redshift::Cluster",
+                        "AWS::Redshift::ClusterParameterGroup",
+                        "AWS::Redshift::ClusterSecurityGroup",
+                        "AWS::Redshift::ClusterSnapshot",
+                        "AWS::Redshift::ClusterSubnetGroup",
+                        "AWS::S3::Bucket"
+                    ]
+                }
+            }
+        },
+        "LambdaExecutionRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                ],
+                "Policies": [
+                    {
+                        "PolicyName": "root",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "rds:AddTagsToResource",
+                                        "s3:ListBucketByTags",
+                                        "redshift:CreateTags",
+                                        "s3:GetBucketTagging",
+                                        "elasticloadbalancing:DescribeTags",
+                                        "ec2:DescribeTags",
+                                        "ec2:CreateTags",
+                                        "autoscaling:DescribeTags",
+                                        "dynamodb:ListTagsOfResource",
+                                        "redshift:DescribeTags",
+                                        "acm:AddTagsToCertificate",
+                                        "acm:ListTagsForCertificate",
+                                        "config:ListDiscoveredResources",
+                                        "dynamodb:TagResource",
+                                        "rds:ListTagsForResource",
+                                        "s3:PutBucketTagging",
+                                        "autoscaling:CreateOrUpdateTags",
+                                        "elasticloadbalancing:AddTags"
+                                    ],
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "LambdaInvoke": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+                "Description": "Invoke Lambda to AddTags to NON_COMPLIANT resources from CONFIG rule\n",
+                "EventPattern": {
+                    "source": [
+                        "aws.config"
+                    ],
+                    "detail-type": [
+                        "AWS API Call via CloudTrail"
+                    ],
+                    "detail": {
+                        "eventSource": [
+                            "config.amazonaws.com"
+                        ],
+                        "eventName": [
+                            "PutEvaluations"
+                        ],
+                        "requestParameters": {
+                            "evaluations": {
+                                "complianceType": [
+                                    "NON_COMPLIANT"
+                                ]
+                            }
+                        },
+                        "additionalEventData": {
+                            "managedRuleIdentifier": [
+                                "REQUIRED_TAGS"
+                            ]
+                        }
+                    }
+                },
+                "State": "ENABLED",
+                "Targets": [
+                    {
+                        "Arn": {
+                            "Fn::Sub": "${LambdaFunction.Arn}"
+                        },
+                        "Id": "LambdaInvoke"
+                    }
+                ]
+            }
+        },
+        "LambdaCloudWatchPermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:InvokeFunction",
+                "FunctionName": {
+                    "Fn::Sub": "${LambdaFunction.Arn}"
+                },
+                "Principal": "events.amazonaws.com",
+                "SourceArn": {
+                    "Fn::Sub": "${LambdaInvoke.Arn}"
+                }
+            }
+        },
+        "LambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Description": "Lambda function that adds tags for NON_COMPLIANT resources from Config Rule results\n",
+                "Code": {
+                    "S3Bucket": {
+                        "Ref": "BucketName"
+                    },
+                    "S3Key": {
+                        "Ref": "ObjectName"
+                    }
+                },
+                "Handler": "lambda_function.lambda_handler",
+                "MemorySize": 128,
+                "Role": {
+                    "Fn::Sub": "${LambdaExecutionRole.Arn}"
+                },
+                "Runtime": "python3.6"
+            }
+        }
+    }
+}
