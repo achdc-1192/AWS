@@ -1,7 +1,6 @@
 # This file made available under CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/legalcode)
 #
-# Description: Check that security groups do not have an inbound rule
-#              with port range of "All".
+# Description: Check whether EC2 running instance is managed by SSM or not.
 #
 # Trigger Type: Periodic 
 # Accepted Parameters: None
