@@ -3,8 +3,7 @@
 # Description: Check that security groups do not have an inbound rule
 #              with port range of "All".
 #
-# Trigger Type: Change Triggered
-# Scope of Changes: EC2:SecurityGroup
+# Trigger Type: Periodic 
 # Accepted Parameters: None
 # Your Lambda function execution role will need to have a policy that provides
 # the appropriate permissions. Here is a policy that you can consider.
