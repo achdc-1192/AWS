@@ -81,6 +81,15 @@ def evaluate_compliance(event, configuration_item, valid_rule_parameters):
     for managed_instanceids in instance_association['InstanceInformationList']:
         managed_instances.append(managed_instanceids['InstanceId'])
     
+    while True:
+        if 'NextToken' in instance_association:
+            instance_association = SSM_CLIENT.describe_instance_information(NextToken=instance_association['NextToken'])
+            if instance_association['InstanceInformationList']:
+                for managed in instance_association['InstanceInformationList']:
+                    managed_instances.append(managed['InstanceId'])
+        else:
+            break
+    
     for instances in ec2_resp:
         if instances.instance_id not in managed_instances:
             compliance_type = "NON_COMPLIANT"
